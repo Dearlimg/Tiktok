@@ -11,5 +11,4 @@ type database struct {
 func (db database) Init() {
 	mysql.Init()
 	redis.InitRedis()
-	rabbitmq
 }

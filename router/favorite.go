@@ -6,5 +6,9 @@ type favorite struct {
 }
 
 func (favorite *favorite) Init(router *gin.RouterGroup) {
-
+	r := router.Group("/favorite")
+	{
+		r.GET("list")
+		r.POST("action")
+	}
 }
