@@ -13,20 +13,20 @@ const (
 	// 阿里 OSS 相关配置
 	OSS_ACCESS_KEY_ID     = "LTAI5t7Yy1jQVLAvVAHF2KqZ"
 	OSS_ACCESS_KEY_SECRET = "6MjwdHPszGfOnBJBJklXzjqTcEQRlO"
-	OSS_BUCKET_NAME       = "simple-tiktok"
-	OSS_ENDPOINT          = "https://oss-cn-beijing.aliyuncs.com"
-	CUSTOM_DOMAIN         = "123.249.42.125/"
-	OSS_VIDEO_DIR         = "tiktok/"
+	OSS_BUCKET_NAME       = "durlim-tiktok"
+	OSS_ENDPOINT          = "oss-cn-beijing.aliyuncs.com"
+	CUSTOM_DOMAIN         = "durlim-tiktok.oss-cn-beijing.aliyuncs.com"
+	OSS_VIDEO_DIR         = "tiktok"
 	PLAY_URL_PREFIX       = CUSTOM_DOMAIN + OSS_VIDEO_DIR
 	COVER_URL_SUFFIX      = "?x-oss-process=video/snapshot,t_2000,m_fast"
-	OSS_USER_AVATAR_DIR   = ""
+	OSS_USER_AVATAR_DIR   = "https://tse3-mm.cn.bing.net/th/id/OIP-C.449_jFJDOg6VBfOwJU_hrQHaEK?w=309&h=180&c=7&r=0&o=7&dpr=1.1&pid=1.7&rm=3"
 )
 
 const LIKE = 1
 
-const BG_IMAGE = "nil"
+const BG_IMAGE = "https://tse3-mm.cn.bing.net/th/id/OIP-C.449_jFJDOg6VBfOwJU_hrQHaEK?w=309&h=180&c=7&r=0&o=7&dpr=1.1&pid=1.7&rm=3"
 
-const SIGNATURE = "nil"
+const SIGNATURE = "我想休息"
 
 const SECRETE = "Durlim"
 

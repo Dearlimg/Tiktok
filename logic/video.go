@@ -41,6 +41,7 @@ func (videoService *VideoServiceImpl) Publish(data *multipart.FileHeader, title 
 	videoName := uuid.New().String()
 	err := UploadVideoToOSS(data, videoName)
 	if err != nil {
+		log.Println("视频存入oss失败!")
 		return err
 	}
 	err = mysql.UploadVideo(videoName, userId, title)

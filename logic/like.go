@@ -51,6 +51,7 @@ func (*LikeServiceImpl) FavoriteAction(userId int64, videoId int64, actionType i
 		//return nil
 		//  更新 redis
 		syncLikeRedis(userId, videoId, 1)
+		fmt.Println("wrong is in here1?")
 		// 消息队列
 		err := likeAddMQ.PublishSimple(fmt.Sprintf("%d-%d-%s", userId, videoId, "insert"))
 		return err
@@ -59,9 +60,11 @@ func (*LikeServiceImpl) FavoriteAction(userId int64, videoId int64, actionType i
 	//err = dao.UpdateLikeInfo(userId, videoId, int8(actionType))
 	if actionType == 1 {
 		syncLikeRedis(userId, videoId, 1)
+		fmt.Println("wrong is in here2?")
 		err = likeAddMQ.PublishSimple(fmt.Sprintf("%d-%d-%s", userId, videoId, "update"))
 	} else {
 		syncLikeRedis(userId, videoId, 2)
+		fmt.Println("wrong is in here3?")
 		err = likeDelMQ.PublishSimple(fmt.Sprintf("%d-%d-%s", userId, videoId, "update"))
 	}
 	if err != nil {

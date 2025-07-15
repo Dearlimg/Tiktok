@@ -29,7 +29,6 @@ func Publish(c *gin.Context) {
 		return
 	}
 	title := c.PostForm("title")
-	log.Printf("视频 title: %v\n", title)
 	videoService := logic.GetVideoServiceInstance()
 	// 从 token 中获取 userId
 	err = videoService.Publish(data, title, userId)

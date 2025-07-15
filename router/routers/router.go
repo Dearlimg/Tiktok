@@ -7,7 +7,7 @@ import (
 
 func NewRouter() *gin.Engine {
 	r := gin.Default()
-	root := r.Group("")
+	root := r.Group("tiktok")
 	{
 		root.GET("ping", func(c *gin.Context) {
 			c.JSON(200, gin.H{
@@ -15,13 +15,13 @@ func NewRouter() *gin.Engine {
 			})
 		})
 		rg := router.Routers
-		rg.User.Init(root)
-		rg.Message.Init(root)
-		rg.Relation.Init(root)
-		rg.Comment.Init(root)
-		rg.Feed.Init(root)
-		rg.Favorite.Init(root)
-		rg.Publish.Init(root)
+		rg.User.Init(root)     //finished
+		rg.Message.Init(root)  //finished
+		rg.Relation.Init(root) //finished
+		rg.Comment.Init(root)  //finished
+		rg.Feed.Init(root)     //finished
+		rg.Favorite.Init(root) //finished
+		rg.Publish.Init(root)  //finished
 	}
 	return r
 }
