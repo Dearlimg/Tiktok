@@ -5,6 +5,7 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 	"log"
 	"strconv"
+	"tiktok001/dao/mysql"
 )
 
 type CommentMQ struct {
@@ -123,7 +124,7 @@ func (r *CommentMQ) consumerCommentDel(msgs <-chan amqp.Delivery) {
 		for i := 0; i < cnt; i++ {
 			succeed := true
 			var err error
-			err = dao.DeleteComment(commentId)
+			err = mysql.DeleteComment(commentId)
 			if err != nil {
 				succeed = false
 			}

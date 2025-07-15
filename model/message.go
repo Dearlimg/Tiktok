@@ -12,8 +12,8 @@ type Message struct {
 
 // LatestMessage 提供给用户好友列表接口的最新一条聊天信息, msgType 消息类型，0 => 当前请求用户接收的消息， 1 => 当前请求用户发送的消息
 type LatestMessage struct {
-	message string `json:"message"`
-	msgType int64  `json:"msg_type"`
+	Message string `json:"message"`
+	MsgType int64  `json:"msg_type"`
 }
 
 type MessageService interface {

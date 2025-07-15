@@ -1,6 +1,10 @@
 package router
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/gin-gonic/gin"
+	"tiktok001/controller/api"
+	"tiktok001/middleware"
+)
 
 type User struct {
 }
@@ -10,9 +14,9 @@ func (u User) Init(router *gin.RouterGroup) {
 	{
 		userGroup := r.Group("")
 		{
-			userGroup.GET("")
-			userGroup.POST("register")
-			userGroup.POST("login")
+			userGroup.GET("", middleware.Auth(), api.UserInfo)
+			userGroup.POST("register", api.Register)
+			userGroup.POST("login", api.Login)
 		}
 	}
 }

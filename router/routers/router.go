@@ -7,7 +7,7 @@ import (
 
 func NewRouter() *gin.Engine {
 	r := gin.Default()
-	root := r.Group("api")
+	root := r.Group("")
 	{
 		root.GET("ping", func(c *gin.Context) {
 			c.JSON(200, gin.H{

@@ -6,8 +6,8 @@ import (
 	"log"
 	"strconv"
 	"strings"
-	"x-tiktok/config"
-	"x-tiktok/dao"
+	"tiktok001/config"
+	"tiktok001/dao/mysql"
 )
 
 type FollowMQ struct {
@@ -124,7 +124,7 @@ func (r *FollowMQ) ConsumeSimpleFollow() {
 // consumerFollowAdd 添加关注关系的消费
 func (r *FollowMQ) consumerFollowAdd(msgs <-chan amqp.Delivery) {
 	for msg := range msgs {
-		followDao := dao.NewFollowDaoInstance()
+		followDao := mysql.NewFollowDaoInstance()
 		// 解析参数
 		params := strings.Split(fmt.Sprintf("%s", msg.Body), "-")
 		log.Println("添加关注关系消费者获得 params:", params)
@@ -154,7 +154,7 @@ func (r *FollowMQ) consumerFollowAdd(msgs <-chan amqp.Delivery) {
 // consumerFollowDel 删除关注关系的消费
 func (r *FollowMQ) consumerFollowDel(msgs <-chan amqp.Delivery) {
 	for msg := range msgs {
-		followDao := dao.NewFollowDaoInstance()
+		followDao := mysql.NewFollowDaoInstance()
 		// 解析参数
 		params := strings.Split(fmt.Sprintf("%s", msg.Body), "-")
 		log.Println("添加关注关系消费者获得 params:", params)

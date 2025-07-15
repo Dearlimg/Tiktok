@@ -6,6 +6,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"tiktok001/dao/mysql"
 	"time"
 )
 
@@ -135,15 +136,15 @@ func (r *LikeMQ) consumerLikeAdd(msgs <-chan amqp.Delivery) {
 			succeed := true
 			var err error
 			if insertOrUpdate == "insert" {
-				var likeinfo dao.Like
+				var likeinfo mysql.Like
 				likeinfo.UserId = userId
 				likeinfo.VideoId = videoId
 				likeinfo.Liked = int8(1)
 				likeinfo.CreatedAt = time.Now()
 				likeinfo.UpdatedAt = time.Now()
-				err = dao.InsertLikeInfo(likeinfo)
+				err = mysql.InsertLikeInfo(likeinfo)
 			} else if insertOrUpdate == "update" {
-				err = dao.UpdateLikeInfo(userId, videoId, int8(1))
+				err = mysql.UpdateLikeInfo(userId, videoId, int8(1))
 			}
 			if err != nil {
 				succeed = false
@@ -170,7 +171,7 @@ func (r *LikeMQ) consumerLikeDel(msgs <-chan amqp.Delivery) {
 			succeed := true
 			var err error
 			if insertOrUpdate == "update" {
-				err = dao.UpdateLikeInfo(userId, videoId, int8(2))
+				err = mysql.UpdateLikeInfo(userId, videoId, int8(2))
 			}
 			if err != nil {
 				succeed = false

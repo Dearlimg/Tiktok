@@ -1,6 +1,10 @@
 package router
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/gin-gonic/gin"
+	"tiktok001/controller/api"
+	"tiktok001/middleware"
+)
 
 type publish struct {
 }
@@ -8,7 +12,7 @@ type publish struct {
 func (p *publish) Init(router *gin.RouterGroup) {
 	r := router.Group("publish")
 	{
-		r.GET("list")
-		r.POST("action")
+		r.GET("list", middleware.AuthWithoutLogin(), api.PublishList)
+		r.POST("action", middleware.AuthBody(), api.Publish)
 	}
 }

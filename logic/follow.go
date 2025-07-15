@@ -635,8 +635,8 @@ func (followService *FollowServiceImp) BuildFriendUser(userId int64, friendUsers
 			continue
 		}
 
-		friendUsers[i].Message = messageInfo.message
-		friendUsers[i].MsgType = messageInfo.msgType
+		friendUsers[i].Message = messageInfo.Message
+		friendUsers[i].MsgType = messageInfo.MsgType
 	}
 
 	// 将空数组内属性构建完成即可，不用特意返回数组

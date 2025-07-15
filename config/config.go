@@ -28,7 +28,7 @@ const BG_IMAGE = "nil"
 
 const SIGNATURE = "nil"
 
-const SECRETE = "joker"
+const SECRETE = "Durlim"
 
 const (
 	ExpireTime = 100000
