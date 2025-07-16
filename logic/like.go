@@ -33,8 +33,6 @@ func NewLikeServImpInstance() *LikeServiceImpl {
 
 func (*LikeServiceImpl) FavoriteAction(userId int64, videoId int64, actionType int32) error {
 	islike, err := mysql.IsVideoLikedByUser(userId, videoId)
-	log.Print("islike:", islike)
-	log.Println("actionType:", actionType)
 	// 获取点赞和取消点赞的消息队列
 	likeAddMQ := rabbitmq.SimpleLikeAddMQ
 	likeDelMQ := rabbitmq.SimpleLikeDelMQ
@@ -51,7 +49,6 @@ func (*LikeServiceImpl) FavoriteAction(userId int64, videoId int64, actionType i
 		//return nil
 		//  更新 redis
 		syncLikeRedis(userId, videoId, 1)
-		fmt.Println("wrong is in here1?")
 		// 消息队列
 		err := likeAddMQ.PublishSimple(fmt.Sprintf("%d-%d-%s", userId, videoId, "insert"))
 		return err
@@ -60,7 +57,6 @@ func (*LikeServiceImpl) FavoriteAction(userId int64, videoId int64, actionType i
 	//err = dao.UpdateLikeInfo(userId, videoId, int8(actionType))
 	if actionType == 1 {
 		syncLikeRedis(userId, videoId, 1)
-		fmt.Println("wrong is in here2?")
 		err = likeAddMQ.PublishSimple(fmt.Sprintf("%d-%d-%s", userId, videoId, "update"))
 	} else {
 		syncLikeRedis(userId, videoId, 2)
@@ -268,10 +264,12 @@ func syncLikeRedis(userId int64, videoId int64, actionType int32) error {
 	switch actionType {
 	case 1:
 		// 点赞
+		fmt.Println("点赞", userIdStr, videoId)
 		redis.RdbUVid.SAdd(redis.Ctx, userIdStr, videoId)
 		redis.RdbVUid.SAdd(redis.Ctx, videoIdStr, userId)
 	case 2:
 		// 取消点赞
+		fmt.Println("取消点赞", userIdStr, videoId)
 		redis.RdbUVid.SRem(redis.Ctx, userIdStr, videoId)
 		redis.RdbVUid.SRem(redis.Ctx, videoIdStr, userId)
 	default:

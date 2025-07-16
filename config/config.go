@@ -31,7 +31,7 @@ const SIGNATURE = "我想休息"
 const SECRETE = "Durlim"
 
 const (
-	ExpireTime = 100000
+	ExpireTime = 86400 * time.Second
 )
 
 var LatestRequestTime = make(map[string]time.Time, 100)

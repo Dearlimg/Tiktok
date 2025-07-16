@@ -7,6 +7,16 @@ import (
 	"time"
 )
 
+//RdbTest → DB 0（测试用）
+//RdbVCid → DB 1（存储 video 与 comment 的关系）
+//RdbCVid → DB 2（根据 commentId 找 videoId）
+//RdbCIdComment → DB 3（根据 commentId 找 comment）
+//RdbUVid → DB 4（用户点赞的 videoId）
+//RdbVUid → DB 5（点赞 video 的用户 ID）
+//UserFollowings → DB 11（用户关注列表）
+//UserFollowers → DB 12（用户粉丝列表）
+//UserFriends → DB 13（用户好友列表）
+
 var Ctx = context.Background()
 var NilError = redis.Nil
 var RdbTest *redis.Client
