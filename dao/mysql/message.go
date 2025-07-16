@@ -10,7 +10,7 @@ type Message struct {
 	Id         int64     `json:"id" gorm:"user_id"`
 	UserId     int64     `json:"user_id" gorm:"user_id"`
 	ReceiverId int64     `json:"receiver_id" gorm:"receiver_id"`
-	ActionType int64     `json:"action_type" gorm:"action_type"`
+	MsgType    int64     `json:"action_type" gorm:"action_type"`
 	MsgContent string    `json:"msg_content" gorm:"msg_content"`
 	CreatedAt  time.Time `json:"created_at" gorm:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at" gorm:"updated_at"`
@@ -41,7 +41,7 @@ func SendMessage(fromUserId int64, toUserId int64, content string, actionType in
 	var message Message
 	message.UserId = fromUserId
 	message.ReceiverId = toUserId
-	message.ActionType = actionType
+	message.MsgType = actionType
 	message.MsgContent = content
 	message.CreatedAt = time.Now()
 	message.UpdatedAt = time.Now()

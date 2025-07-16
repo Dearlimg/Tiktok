@@ -31,8 +31,9 @@ func MessageAction(c *gin.Context) {
 	err = messageService.SendMessage(loginUserId, targetUserId, content, targetActionType)
 	if err != nil {
 		c.JSON(http.StatusOK, Response{StatusCode: 1, StatusMsg: "Send Message 接口错误"})
+	} else {
+		c.JSON(http.StatusOK, Response{StatusCode: 0, StatusMsg: "Send Message success"})
 	}
-	c.JSON(http.StatusOK, Response{StatusCode: 0})
 }
 
 // MessageChat 消息列表
