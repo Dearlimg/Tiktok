@@ -37,16 +37,6 @@ func (*LikeServiceImpl) FavoriteAction(userId int64, videoId int64, actionType i
 	likeAddMQ := rabbitmq.SimpleLikeAddMQ
 	likeDelMQ := rabbitmq.SimpleLikeDelMQ
 	if islike == -1 {
-		//用户没有点赞过该视频
-		//插入一条新记录
-		//var likeinfo dao.Like
-		//likeinfo.UserId = userId
-		//likeinfo.VideoId = videoId
-		//likeinfo.Liked = int8(actionType)
-		//likeinfo.CreatedAt = time.Now()
-		//likeinfo.UpdatedAt = time.Now()
-		//err = dao.InsertLikeInfo(likeinfo)
-		//return nil
 		//  更新 redis
 		syncLikeRedis(userId, videoId, 1)
 		// 消息队列
@@ -54,13 +44,11 @@ func (*LikeServiceImpl) FavoriteAction(userId int64, videoId int64, actionType i
 		return err
 	}
 	//该用户曾对此视频点过赞
-	//err = dao.UpdateLikeInfo(userId, videoId, int8(actionType))
 	if actionType == 1 {
 		syncLikeRedis(userId, videoId, 1)
 		err = likeAddMQ.PublishSimple(fmt.Sprintf("%d-%d-%s", userId, videoId, "update"))
 	} else {
 		syncLikeRedis(userId, videoId, 2)
-		fmt.Println("wrong is in here3?")
 		err = likeDelMQ.PublishSimple(fmt.Sprintf("%d-%d-%s", userId, videoId, "update"))
 	}
 	if err != nil {
@@ -91,7 +79,6 @@ func (*LikeServiceImpl) GetLikesList(userId int64) ([]model.Video, error) {
 // GetUserLikeCount 获取用户点赞视频的数量
 func (*LikeServiceImpl) GetUserLikeCount(userId int64) (int64, error) {
 	likeCnt, err := GetUserLikeCountByRedis(userId)
-	//_, likeCnt, err := dao.GetLikeListByUserId(userId)
 	if err != nil {
 		log.Print("Get like count failed!")
 		return -1, err
@@ -102,7 +89,6 @@ func (*LikeServiceImpl) GetUserLikeCount(userId int64) (int64, error) {
 // GetVideoLikedCount 获取视频点赞数
 func (*LikeServiceImpl) GetVideoLikedCount(videoId int64) (int64, error) {
 	likeCnt, err := GetVideoLikedCountByRedis(videoId)
-	//likeCnt, err := dao.VideoLikedCount(videoId)
 	if err != nil {
 		log.Print("Get like count failed!")
 		return -1, err

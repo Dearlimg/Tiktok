@@ -36,7 +36,7 @@ func UploadVideo(videoName string, authorId int64, videoTitle string) error {
 	var video Video
 	video.AuthorId = authorId
 	video.Title = videoTitle
-	video.PlayUrl = config.PLAY_URL_PREFIX + videoName + ".mp4"
+	video.PlayUrl = "https://durlim-tiktok.oss-cn-beijing.aliyuncs.com/" + config.PLAY_URL_PREFIX + videoName + ".mp4"
 	video.CoverUrl = video.PlayUrl + config.COVER_URL_SUFFIX
 	video.CreatedAt = time.Now()
 	video.UpdatedAt = time.Now()

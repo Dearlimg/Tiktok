@@ -2,11 +2,13 @@ package routers
 
 import (
 	"github.com/gin-gonic/gin"
+	"tiktok001/middleware"
 	"tiktok001/router"
 )
 
 func NewRouter() *gin.Engine {
 	r := gin.Default()
+	r.Use(middleware.CorsMiddleware())
 	root := r.Group("tiktok")
 	{
 		root.GET("ping", func(c *gin.Context) {

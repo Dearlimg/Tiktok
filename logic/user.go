@@ -155,7 +155,7 @@ func (usi *UserServiceImpl) GetUserLoginInfoByIdWithCurId(id int64, curId int64)
 		FollowCount:     1,
 		FollowerCount:   99999,
 		IsFollow:        false,
-		Avatar:          config.CUSTOM_DOMAIN + config.OSS_USER_AVATAR_DIR,
+		Avatar:          config.OSS_USER_AVATAR_DIR,
 		BackgroundImage: config.BG_IMAGE,
 		Signature:       config.SIGNATURE,
 		TotalFavorited:  10,
