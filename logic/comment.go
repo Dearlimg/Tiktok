@@ -50,13 +50,12 @@ func (commentService *CommentServiceImpl) CommentAction(comment mysql.Comment) (
 		User:       user,
 		Content:    commentRes.Content,
 		CreateDate: commentRes.CreatedAt.Format(config.GO_STARTER_TIME),
-		LikeCount:  int64(rand.Intn(100)),
-		TeaseCount: int64(rand.Intn(100)),
+		//LikeCount:  int64(rand.Intn(100)),
+		//TeaseCount: int64(rand.Intn(100)),
 	}
 	// redis操作：将发表的评论id存入redis
 	go func() {
 		insertRedisVCId(strconv.FormatInt(comment.VideoId, 10), strconv.FormatInt(commentRes.Id, 10), commentData)
-		log.Println("commentAction save in redis")
 	}()
 
 	return commentData, nil
@@ -213,33 +212,43 @@ func (commentService *CommentServiceImpl) GetCommentCnt(videoId int64) (int64, e
 	return mysql.GetCommentCnt(videoId)
 }
 
-// redis中存储videId与commentId对应关系
 func insertRedisVCId(videoId string, commentId string, comment model.Comment) {
-	_, err := redis.RdbVCid.SAdd(redis.Ctx, videoId, commentId).Result()
-	if err != nil {
-		log.Println("redis save fail:vId-cId")
-		redis.RdbVCid.Del(redis.Ctx, videoId)
-		return
-	}
-	// 设置键的有效期，为数据不一致情况兜底
+	redis.RdbVCid.SAdd(redis.Ctx, videoId, commentId) //1
 	redis.RdbVCid.Expire(redis.Ctx, videoId, config.ExpireTime)
-	// 设置键的有效期，为数据不一致情况兜底
-	_, err = redis.RdbCVid.Set(redis.Ctx, commentId, videoId, config.ExpireTime).Result()
-	if err != nil {
-		log.Println("redis save fail:cId-vId")
-		return
-	}
-	b, err := json.Marshal(comment)
-	if err != nil {
-		log.Println("serialize failed in redis save", err)
-	}
-	// 设置键的有效期，为数据不一致情况兜底
-	_, err = redis.RdbCIdComment.Set(redis.Ctx, commentId, string(b), config.ExpireTime).Result()
-	if err != nil {
-		log.Println("redis save fail:cId-comment")
-		return
-	}
+
+	redis.RdbCVid.Set(redis.Ctx, commentId, videoId, config.ExpireTime)
+	redis.RdbCIdComment.Set(redis.Ctx, commentId, comment, config.ExpireTime)
 }
+
+//
+////redis中存储videId与commentId对应关系
+//func insertRedisVCId(videoId string, commentId string, comment model.Comment) {
+//	fmt.Println("insert redis vcid data", videoId, commentId, comment)
+//	_, err := redis.RdbVCid.SAdd(redis.Ctx, videoId, commentId).Result()
+//	if err != nil {
+//		log.Println("redis save fail:vId-cId, err : ", err)
+//		redis.RdbVCid.Del(redis.Ctx, videoId)
+//		return
+//	}
+//	// 设置键的有效期，为数据不一致情况兜底
+//	redis.RdbVCid.Expire(redis.Ctx, videoId, config.ExpireTime)
+//	// 设置键的有效期，为数据不一致情况兜底
+//	_, err = redis.RdbCVid.Set(redis.Ctx, commentId, videoId, config.ExpireTime).Result()
+//	if err != nil {
+//		log.Println("redis save fail:cId-vId")
+//		return
+//	}
+//	b, err := json.Marshal(comment)
+//	if err != nil {
+//		log.Println("serialize failed in redis save", err)
+//	}
+//	// 设置键的有效期，为数据不一致情况兜底
+//	_, err = redis.RdbCIdComment.Set(redis.Ctx, commentId, string(b), config.ExpireTime).Result()
+//	if err != nil {
+//		log.Println("redis save fail:cId-comment")
+//		return
+//	}
+//}
 
 // CommentSlice Golang实现任意类型sort函数的流程
 type CommentSlice []model.Comment

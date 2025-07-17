@@ -47,7 +47,7 @@ var RdbVUid *redis.Client
 
 const (
 	ProdRedisAddr = "123.249.32.125:6379"
-	ProRedisPwd   = ""
+	ProRedisPwd   = "sta_go"
 )
 
 // InitRedis 初始化 Redis 连接，redis 默认 16 个 DB

@@ -13,7 +13,7 @@ var Db *gorm.DB
 func Init() {
 	// 配置 MySQL
 	username := "root"
-	password := "123456"
+	password := "sta_go"
 	host := "123.249.32.125"
 	port := 3307
 	dbname := "tiktok"
