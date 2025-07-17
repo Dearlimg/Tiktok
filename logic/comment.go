@@ -103,22 +103,21 @@ func (commentService *CommentServiceImpl) DeleteCommentAction(commentId int64) e
 func (commentService *CommentServiceImpl) GetCommentList(videoId int64, userId int64) ([]model.Comment, error) {
 	//redis操作：先查缓存是否命中，若命中，取缓存中的之；否则去读数据库并更新缓存
 	videoIdToStr := strconv.FormatInt(videoId, 10)
-	cnt, err := redis.RdbVCid.SCard(redis.Ctx, videoIdToStr).Result()
+	cnt, err := redis.Client.SCard(redis.Ctx, "VCid:"+videoIdToStr).Result()
 	if err != nil {
 		log.Println("SCard failed", err)
 	}
 	// 缓存中存在评论列表
 	if cnt > 0 {
 		var commentInfoList []model.Comment
-		log.Println("videoId", videoIdToStr)
-		commentIdStringList, err := redis.RdbVCid.SMembers(redis.Ctx, videoIdToStr).Result()
+		commentIdStringList, err := redis.Client.SMembers(redis.Ctx, "VCid:"+videoIdToStr).Result()
 		if err != nil {
 			log.Println("read redis vId failed", err)
 			//return nil, err
 		}
 		for _, commentIdString := range commentIdStringList {
 			var commentData model.Comment
-			commentString, err := redis.RdbCIdComment.Get(redis.Ctx, commentIdString).Result()
+			commentString, err := redis.Client.Get(redis.Ctx, "CidComment:"+commentIdString).Result()
 			b := []byte(commentString)
 			err = json.Unmarshal(b, &commentData)
 			if err != nil {
@@ -157,7 +156,6 @@ func (commentService *CommentServiceImpl) GetCommentList(videoId int64, userId i
 			insertRedisVCId(videoIdToStr, commentIdToStr, commentData)
 			wg.Done()
 		}(comment)
-
 	}
 	wg.Wait()
 	// 按照评论的先后时间降序排列
@@ -206,25 +204,26 @@ func (commentService *CommentServiceImpl) GetCommentCnt(videoId int64) (int64, e
 	}
 	// 如果在缓存中直接返回
 	if cnt > 0 {
-		log.Println("从redis读取的评论数量")
+		log.Println("从redis读取的评论数量", cnt)
 		return cnt, nil
 	}
 	return mysql.GetCommentCnt(videoId)
 }
 
 func insertRedisVCId(videoId string, commentId string, comment model.Comment) {
-	redis.RdbVCid.SAdd(redis.Ctx, videoId, commentId) //1
-	redis.RdbVCid.Expire(redis.Ctx, videoId, config.ExpireTime)
-
-	redis.RdbCVid.Set(redis.Ctx, commentId, videoId, config.ExpireTime)
-	redis.RdbCIdComment.Set(redis.Ctx, commentId, comment, config.ExpireTime)
+	redis.Client.SAdd(redis.Ctx, "VCid:"+videoId, commentId)
+	redis.Client.Set(redis.Ctx, "CVid:"+commentId, videoId, config.ExpireTime)
+	b, err := json.Marshal(comment)
+	if err != nil {
+		log.Println("serialize failed in redis save", err)
+	}
+	redis.Client.Set(redis.Ctx, "CidComment:"+commentId, string(b), config.ExpireTime)
 }
 
-//
+////
 ////redis中存储videId与commentId对应关系
 //func insertRedisVCId(videoId string, commentId string, comment model.Comment) {
-//	fmt.Println("insert redis vcid data", videoId, commentId, comment)
-//	_, err := redis.RdbVCid.SAdd(redis.Ctx, videoId, commentId).Result()
+//	_, err := redis.Client.SAdd(redis.Ctx, "VCid:"+videoId, commentId).Result()
 //	if err != nil {
 //		log.Println("redis save fail:vId-cId, err : ", err)
 //		redis.RdbVCid.Del(redis.Ctx, videoId)
@@ -233,7 +232,7 @@ func insertRedisVCId(videoId string, commentId string, comment model.Comment) {
 //	// 设置键的有效期，为数据不一致情况兜底
 //	redis.RdbVCid.Expire(redis.Ctx, videoId, config.ExpireTime)
 //	// 设置键的有效期，为数据不一致情况兜底
-//	_, err = redis.RdbCVid.Set(redis.Ctx, commentId, videoId, config.ExpireTime).Result()
+//	_, err = redis.RdbCVid.Set(redis.Ctx, "CVid:"+commentId, videoId, config.ExpireTime).Result()
 //	if err != nil {
 //		log.Println("redis save fail:cId-vId")
 //		return
@@ -243,7 +242,7 @@ func insertRedisVCId(videoId string, commentId string, comment model.Comment) {
 //		log.Println("serialize failed in redis save", err)
 //	}
 //	// 设置键的有效期，为数据不一致情况兜底
-//	_, err = redis.RdbCIdComment.Set(redis.Ctx, commentId, string(b), config.ExpireTime).Result()
+//	_, err = redis.RdbCIdComment.Set(redis.Ctx, "CidComment:"+commentId, string(b), config.ExpireTime).Result()
 //	if err != nil {
 //		log.Println("redis save fail:cId-comment")
 //		return

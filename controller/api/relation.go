@@ -28,12 +28,8 @@ type FriendUserListResponse struct {
 // RelationAction no practical effect, just check if token is valid
 func RelationAction(c *gin.Context) {
 	userId := c.GetInt64("userId")
-	//userId, err1 := strconv.ParseInt(c.Query("userId"), 10, 64)
 	toUserId, err2 := strconv.ParseInt(c.Query("to_user_id"), 10, 64)
 	actionType, err3 := strconv.ParseInt(c.Query("action_type"), 10, 64)
-	//fmt.Println(userId)
-	//fmt.Println(toUserId)
-	//fmt.Println(actionType)
 	// 传入参数格式有问题。
 	if nil != err2 || nil != err3 || actionType < 1 || actionType > 2 {
 		fmt.Printf("fail")
@@ -152,9 +148,6 @@ func FollowerList(c *gin.Context) {
 // FriendList all users have same friend list
 func FriendList(c *gin.Context) {
 	userId, err := strconv.ParseInt(c.Query("user_id"), 10, 64)
-
-	fmt.Println(userId)
-
 	if err != nil {
 		fmt.Printf("fail")
 		c.JSON(http.StatusOK, FriendUserListResponse{

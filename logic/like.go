@@ -38,17 +38,17 @@ func (*LikeServiceImpl) FavoriteAction(userId int64, videoId int64, actionType i
 	likeDelMQ := rabbitmq.SimpleLikeDelMQ
 	if islike == -1 {
 		//  更新 redis
-		syncLikeRedis(userId, videoId, 1)
+		_ = syncLikeRedis(userId, videoId, 1)
 		// 消息队列
 		err := likeAddMQ.PublishSimple(fmt.Sprintf("%d-%d-%s", userId, videoId, "insert"))
 		return err
 	}
 	//该用户曾对此视频点过赞
 	if actionType == 1 {
-		syncLikeRedis(userId, videoId, 1)
+		_ = syncLikeRedis(userId, videoId, 1)
 		err = likeAddMQ.PublishSimple(fmt.Sprintf("%d-%d-%s", userId, videoId, "update"))
 	} else {
-		syncLikeRedis(userId, videoId, 2)
+		_ = syncLikeRedis(userId, videoId, 2)
 		err = likeDelMQ.PublishSimple(fmt.Sprintf("%d-%d-%s", userId, videoId, "update"))
 	}
 	if err != nil {
@@ -129,13 +129,14 @@ func (*LikeServiceImpl) GetUserLikedCnt(userId int64) (int64, error) {
 func GetLikeVideoIdListByRedis(userId int64) ([]int64, int64, error) {
 	userIdStr := strconv.FormatInt(userId, 10)
 	var likedVideoIdList = make([]int64, 0, config.VIDEO_INIT_NUM_PER_AUTHOR)
-	keyCnt, err := redis.RdbUVid.Exists(redis.Ctx, userIdStr).Result()
+	keyCnt, err := redis.Client.Exists(redis.Ctx, "UVId:"+userIdStr).Result()
 	if err != nil {
 		log.Println(err)
 	}
 	if keyCnt > 0 {
 		// RdbUVid 存在 userId
-		vIds, _ := redis.RdbUVid.SMembers(redis.Ctx, userIdStr).Result()
+		vIds, _ := redis.Client.SMembers(redis.Ctx, "UVId:"+userIdStr).Result()
+		fmt.Println("从redis中拿到的vids:", vIds)
 		likedVideoIdList, _ = utils.StrArrToInt64Arr(vIds)
 	} else {
 		// 不存在这个 key，从数据库中导入用户最新点赞的视频数据到 redis
@@ -143,7 +144,7 @@ func GetLikeVideoIdListByRedis(userId int64) ([]int64, int64, error) {
 		if err != nil {
 			log.Println(err)
 		}
-		ImportVideoIdsFromDb(userId, videoIds)
+		_ = ImportVideoIdsFromDb(userId, videoIds)
 		likedVideoIdList = videoIds
 	}
 	return likedVideoIdList, int64(len(likedVideoIdList)), nil
@@ -153,10 +154,10 @@ func GetLikeVideoIdListByRedis(userId int64) ([]int64, int64, error) {
 func ImportVideoIdsFromDb(userId int64, videoIds []int64) error {
 	userIdStr := strconv.FormatInt(userId, 10)
 	for _, videoId := range videoIds {
-		redis.RdbUVid.SAdd(redis.Ctx, userIdStr, videoId)
+		redis.Client.SAdd(redis.Ctx, "UVId:"+userIdStr, videoId)
 	}
 	// 设置过期时间，为数据不一致情况兜底
-	redis.RdbUVid.Expire(redis.Ctx, userIdStr, config.ExpireTime)
+	redis.Client.Expire(redis.Ctx, "UVId:"+userIdStr, config.ExpireTime)
 	return nil
 }
 
@@ -251,13 +252,13 @@ func syncLikeRedis(userId int64, videoId int64, actionType int32) error {
 	case 1:
 		// 点赞
 		fmt.Println("点赞", userIdStr, videoId)
-		redis.RdbUVid.SAdd(redis.Ctx, userIdStr, videoId)
-		redis.RdbVUid.SAdd(redis.Ctx, videoIdStr, userId)
+		redis.Client.SAdd(redis.Ctx, "UVId:"+userIdStr, videoId)
+		redis.Client.SAdd(redis.Ctx, "VUId:"+videoIdStr, userId)
 	case 2:
 		// 取消点赞
 		fmt.Println("取消点赞", userIdStr, videoId)
-		redis.RdbUVid.SRem(redis.Ctx, userIdStr, videoId)
-		redis.RdbVUid.SRem(redis.Ctx, videoIdStr, userId)
+		redis.Client.SRem(redis.Ctx, "UVId:"+userIdStr, videoId)
+		redis.Client.SRem(redis.Ctx, "VUId:"+videoIdStr, userId)
 	default:
 		log.Println("syncLikeRedis 传入的 ActionType 参数错误")
 	}

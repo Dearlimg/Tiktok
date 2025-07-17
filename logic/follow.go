@@ -91,13 +91,12 @@ func (followService *FollowServiceImp) FollowAction(userId int64, targetId int64
 	}
 	followService.AddToRDBWhenFollow(userId, targetId)
 	return true, nil
-
 }
 
 func (followService *FollowServiceImp) AddToRDBWhenFollow(userId int64, targetId int64) {
 	followDao := mysql.NewFollowDaoInstance()
 	// 尝试给following数据库追加user关注target的记录
-	keyCnt1, err1 := redis.UserFollowings.Exists(redis.Ctx, strconv.FormatInt(userId, 10)).Result()
+	keyCnt1, err1 := redis.Client.Exists(redis.Ctx, "UserFollowings:"+strconv.FormatInt(userId, 10)).Result()
 
 	if err1 != nil {
 		log.Println(err1.Error())
@@ -113,10 +112,10 @@ func (followService *FollowServiceImp) AddToRDBWhenFollow(userId int64, targetId
 		ImportToRDBFollowing(userId, userFollowingsId)
 	}
 	// 数据库导入到redis结束后追加记录
-	redis.UserFollowings.SAdd(redis.Ctx, strconv.FormatInt(userId, 10), targetId)
+	redis.Client.SAdd(redis.Ctx, "UserFollowings:"+strconv.FormatInt(userId, 10), targetId)
 
 	// 尝试给follower数据库追加target的粉丝有user的记录
-	keyCnt2, err2 := redis.UserFollowers.Exists(redis.Ctx, strconv.FormatInt(targetId, 10)).Result()
+	keyCnt2, err2 := redis.Client.Exists(redis.Ctx, "UserFollowers:"+strconv.FormatInt(targetId, 10)).Result()
 
 	if err2 != nil {
 		log.Println(err2.Error())
@@ -132,13 +131,13 @@ func (followService *FollowServiceImp) AddToRDBWhenFollow(userId int64, targetId
 		ImportToRDBFollower(targetId, userFollowersId)
 	}
 
-	redis.UserFollowers.SAdd(redis.Ctx, strconv.FormatInt(targetId, 10), userId)
+	redis.Client.SAdd(redis.Ctx, "UserFollowers:"+strconv.FormatInt(targetId, 10), userId)
 
 	// 进行好友的判定，本接口实现user对target的关注，若此时target也关注了user，进行friend数据库的记录追加
 	// user的好友有target，target的好友有user
 	if flag, _ := followService.CheckIsFollowing(targetId, userId); flag {
 		// 尝试给friend数据库追加user的好友有target的记录
-		keyCnt3, err3 := redis.UserFriends.Exists(redis.Ctx, strconv.FormatInt(userId, 10)).Result()
+		keyCnt3, err3 := redis.Client.Exists(redis.Ctx, "UserFriends:"+strconv.FormatInt(userId, 10)).Result()
 
 		if err3 != nil {
 			log.Println(err3.Error())
@@ -152,10 +151,10 @@ func (followService *FollowServiceImp) AddToRDBWhenFollow(userId int64, targetId
 			ImportToRDBFriend(userId, userFriendsId1)
 		}
 
-		redis.UserFriends.SAdd(redis.Ctx, strconv.FormatInt(userId, 10), targetId)
+		redis.Client.SAdd(redis.Ctx, "UserFriends:"+strconv.FormatInt(userId, 10), targetId)
 
 		// 尝试给friend数据库追加target的好友有user的记录
-		keyCnt4, err4 := redis.UserFriends.Exists(redis.Ctx, strconv.FormatInt(targetId, 10)).Result()
+		keyCnt4, err4 := redis.Client.Exists(redis.Ctx, "UserFriends:"+strconv.FormatInt(targetId, 10)).Result()
 
 		if err4 != nil {
 			log.Println(err4.Error())
@@ -170,7 +169,7 @@ func (followService *FollowServiceImp) AddToRDBWhenFollow(userId int64, targetId
 			ImportToRDBFriend(targetId, userFriendsId2)
 		}
 
-		redis.UserFriends.SAdd(redis.Ctx, strconv.FormatInt(targetId, 10), userId)
+		redis.Client.SAdd(redis.Ctx, "UserFriends:"+strconv.FormatInt(targetId, 10), userId)
 	}
 }
 
@@ -204,13 +203,13 @@ func (followService *FollowServiceImp) CancelFollowAction(userId int64, targetId
 }
 func DelToRDBWhenCancelFollow(userId int64, targetId int64) {
 	// 当a取关b时，redis的三个关注数据库会有以下操作
-	redis.UserFollowings.SRem(redis.Ctx, strconv.FormatInt(userId, 10), targetId)
+	redis.Client.SRem(redis.Ctx, "UserFollowings:"+strconv.FormatInt(userId, 10), targetId)
 
-	redis.UserFollowers.SRem(redis.Ctx, strconv.FormatInt(targetId, 10), userId)
+	redis.Client.SRem(redis.Ctx, "UserFollowers:"+strconv.FormatInt(targetId, 10), userId)
 
 	// a取关b，如果a和b属于互关的用户，则两者的互关记录都会删除
-	redis.UserFriends.SRem(redis.Ctx, strconv.FormatInt(userId, 10), targetId)
-	redis.UserFriends.SRem(redis.Ctx, strconv.FormatInt(targetId, 10), userId)
+	redis.Client.SRem(redis.Ctx, "UserFriends:"+strconv.FormatInt(userId, 10), targetId)
+	redis.Client.SRem(redis.Ctx, "UserFriends:"+strconv.FormatInt(targetId, 10), userId)
 }
 
 /*
@@ -221,7 +220,7 @@ func DelToRDBWhenCancelFollow(userId int64, targetId int64) {
 func GetFollowingsByRedis(userId int64) ([]int64, int64, error) {
 	followDao := mysql.NewFollowDaoInstance()
 	// 判定键是否存在
-	keyCnt, err := redis.UserFollowings.Exists(redis.Ctx, strconv.FormatInt(userId, 10)).Result()
+	keyCnt, err := redis.Client.Exists(redis.Ctx, "UserFollowings:"+strconv.FormatInt(userId, 10)).Result()
 
 	if err != nil {
 		log.Println(err.Error())
@@ -229,7 +228,7 @@ func GetFollowingsByRedis(userId int64) ([]int64, int64, error) {
 
 	// 若键存在，获取缓存数据后返回
 	if keyCnt > 0 {
-		ids := redis.UserFollowings.SMembers(redis.Ctx, strconv.FormatInt(userId, 10)).Val()
+		ids := redis.Client.SMembers(redis.Ctx, "UserFollowings:"+strconv.FormatInt(userId, 10)).Val()
 		idsInt64, _ := convertToInt64Array(ids)
 
 		return idsInt64, int64(len(idsInt64)), nil
@@ -273,7 +272,7 @@ func (followService *FollowServiceImp) GetFollowings(userId int64) ([]model.User
 // GetFollowersByRedis 从redis中获取用户粉丝列表
 func GetFollowersByRedis(userId int64) ([]int64, int64, error) {
 	followDao := mysql.NewFollowDaoInstance()
-	keyCnt, err := redis.UserFollowers.Exists(redis.Ctx, strconv.FormatInt(userId, 10)).Result()
+	keyCnt, err := redis.Client.Exists(redis.Ctx, "UserFollowers:"+strconv.FormatInt(userId, 10)).Result()
 
 	if err != nil {
 		log.Println(err.Error())
@@ -281,7 +280,7 @@ func GetFollowersByRedis(userId int64) ([]int64, int64, error) {
 
 	if keyCnt > 0 {
 		// 键存在，获取键中集合元素
-		ids := redis.UserFollowers.SMembers(redis.Ctx, strconv.FormatInt(userId, 10)).Val()
+		ids := redis.Client.SMembers(redis.Ctx, "UserFollowers:"+strconv.FormatInt(userId, 10)).Val()
 		idsInt64, _ := convertToInt64Array(ids)
 
 		return idsInt64, int64(len(idsInt64)), nil
@@ -327,7 +326,7 @@ func (followService *FollowServiceImp) GetFollowers(userId int64) ([]model.User,
 // 从redis中获取好友信息
 func GetFriendsByRedis(userId int64) ([]int64, int64, error) {
 	followDao := mysql.NewFollowDaoInstance()
-	keyCnt, err := redis.UserFriends.Exists(redis.Ctx, strconv.FormatInt(userId, 10)).Result()
+	keyCnt, err := redis.Client.Exists(redis.Ctx, "UserFriends:"+strconv.FormatInt(userId, 10)).Result()
 
 	if err != nil {
 		log.Println(err.Error())
@@ -335,7 +334,7 @@ func GetFriendsByRedis(userId int64) ([]int64, int64, error) {
 
 	if keyCnt > 0 {
 		// 键存在，获取键中集合元素
-		ids := redis.UserFriends.SMembers(redis.Ctx, strconv.FormatInt(userId, 10)).Val()
+		ids := redis.Client.SMembers(redis.Ctx, "UserFriends:"+strconv.FormatInt(userId, 10)).Val()
 		idsInt64, _ := convertToInt64Array(ids)
 
 		return idsInt64, int64(len(idsInt64)), nil
@@ -358,7 +357,7 @@ func (followService *FollowServiceImp) GetFriends(userId int64) ([]model.FriendU
 	// 调用集成redis的好友获取接口获取好友id和好友数量
 	userFriendId, userFriendCnt, err := GetFriendsByRedis(userId)
 
-	if nil != err {
+	if err != nil {
 		log.Println(err.Error())
 	}
 
@@ -371,7 +370,6 @@ func (followService *FollowServiceImp) GetFriends(userId int64) ([]model.FriendU
 	if err1 != nil {
 		log.Println(err1.Error())
 	}
-
 	return userFriends, nil
 }
 
@@ -383,7 +381,7 @@ func (followService *FollowServiceImp) GetFriends(userId int64) ([]model.FriendU
 func (followService *FollowServiceImp) GetFollowingCnt(userId int64) (int64, error) {
 	followDao := mysql.NewFollowDaoInstance()
 
-	keyCnt, err := redis.UserFollowings.Exists(redis.Ctx, strconv.FormatInt(userId, 10)).Result()
+	keyCnt, err := redis.Client.Exists(redis.Ctx, "UserFollowings:"+strconv.FormatInt(userId, 10)).Result()
 
 	if err != nil {
 		log.Println(err.Error())
@@ -391,11 +389,11 @@ func (followService *FollowServiceImp) GetFollowingCnt(userId int64) (int64, err
 
 	if keyCnt > 0 {
 		// 键存在，获取键中集合元素个数
-		cnt, err2 := redis.UserFollowings.SCard(redis.Ctx, strconv.FormatInt(userId, 10)).Result()
+		cnt, err2 := redis.Client.SCard(redis.Ctx, "UserFollowings:"+strconv.FormatInt(userId, 10)).Result()
 		if err2 != nil {
 			log.Println(err2.Error())
 		}
-		redis.UserFollowings.Expire(redis.Ctx, strconv.Itoa(int(userId)), CacheTimeGenerator())
+		redis.Client.Expire(redis.Ctx, "UserFollowings:"+strconv.Itoa(int(userId)), CacheTimeGenerator())
 		return cnt, nil
 
 	} else {
@@ -421,7 +419,7 @@ func (followService *FollowServiceImp) GetFollowingCnt(userId int64) (int64, err
 func (followService *FollowServiceImp) GetFollowerCnt(userId int64) (int64, error) {
 	followDao := mysql.NewFollowDaoInstance()
 
-	keyCnt, err := redis.UserFollowers.Exists(redis.Ctx, strconv.FormatInt(userId, 10)).Result()
+	keyCnt, err := redis.Client.Exists(redis.Ctx, "UserFollowers:"+strconv.FormatInt(userId, 10)).Result()
 
 	if err != nil {
 		log.Println(err.Error())
@@ -429,13 +427,13 @@ func (followService *FollowServiceImp) GetFollowerCnt(userId int64) (int64, erro
 
 	if keyCnt > 0 {
 		// 键存在，获取键中集合元素个数
-		cnt, err2 := redis.UserFollowers.SCard(redis.Ctx, strconv.Itoa(int(userId))).Result()
+		cnt, err2 := redis.Client.SCard(redis.Ctx, "UserFollowers:"+strconv.Itoa(int(userId))).Result()
 
 		if err2 != nil {
 			log.Println(err2.Error())
 		}
 
-		redis.UserFollowers.Expire(redis.Ctx, strconv.Itoa(int(userId)), CacheTimeGenerator())
+		redis.Client.Expire(redis.Ctx, "UserFollowers:"+strconv.Itoa(int(userId)), CacheTimeGenerator())
 		return cnt, nil
 
 	} else {
@@ -461,7 +459,7 @@ func (followService *FollowServiceImp) GetFollowerCnt(userId int64) (int64, erro
 func (followService *FollowServiceImp) CheckIsFollowing(userId int64, targetId int64) (bool, error) {
 	followDao := mysql.NewFollowDaoInstance()
 
-	keyCnt, err := redis.UserFollowings.Exists(redis.Ctx, strconv.FormatInt(userId, 10)).Result()
+	keyCnt, err := redis.Client.Exists(redis.Ctx, "UserFollowings:"+strconv.FormatInt(userId, 10)).Result()
 
 	if err != nil {
 		log.Println(err.Error())
@@ -469,7 +467,7 @@ func (followService *FollowServiceImp) CheckIsFollowing(userId int64, targetId i
 
 	if keyCnt > 0 {
 		// 键存在判断是否存在userId和targetId键值对
-		flag, err3 := redis.UserFollowings.SIsMember(redis.Ctx, strconv.Itoa(int(userId)), targetId).Result()
+		flag, err3 := redis.Client.SIsMember(redis.Ctx, "UserFollowings:"+strconv.Itoa(int(userId)), targetId).Result()
 
 		if err3 != nil {
 			log.Println(err3)
@@ -509,29 +507,29 @@ func (followService *FollowServiceImp) CheckIsFollowing(userId int64, targetId i
 func ImportToRDBFollowing(userId int64, ids []int64) {
 	// 将传入的userId及其关注用户id更新至redis中
 	for _, id := range ids {
-		redis.UserFollowings.SAdd(redis.Ctx, strconv.FormatInt(userId, 10), int(id))
+		redis.Client.SAdd(redis.Ctx, "UserFollowings:"+strconv.FormatInt(userId, 10), int(id))
 	}
 
-	redis.UserFollowings.Expire(redis.Ctx, strconv.FormatInt(userId, 10), CacheTimeGenerator())
+	redis.Client.Expire(redis.Ctx, "UserFollowings:"+strconv.FormatInt(userId, 10), CacheTimeGenerator())
 }
 
 // ImportToRDBFollower 将登陆用户的关注id列表导入到follower数据库中
 func ImportToRDBFollower(userId int64, ids []int64) {
 	// 将传入的userId及其粉丝id更新至redis中
 	for _, id := range ids {
-		redis.UserFollowers.SAdd(redis.Ctx, strconv.FormatInt(userId, 10), int(id))
+		redis.Client.SAdd(redis.Ctx, "UserFollowers:"+strconv.FormatInt(userId, 10), int(id))
 	}
 
-	redis.UserFollowers.Expire(redis.Ctx, strconv.FormatInt(userId, 10), CacheTimeGenerator())
+	redis.Client.Expire(redis.Ctx, "UserFollowers:"+strconv.FormatInt(userId, 10), CacheTimeGenerator())
 }
 
 func ImportToRDBFriend(userId int64, ids []int64) {
 	// 将传入的userId及其好友id更新至redis中
 	for _, id := range ids {
-		redis.UserFriends.SAdd(redis.Ctx, strconv.FormatInt(userId, 10), int(id))
+		redis.Client.SAdd(redis.Ctx, "UserFriends:"+strconv.FormatInt(userId, 10), int(id))
 	}
 
-	redis.UserFriends.Expire(redis.Ctx, strconv.FormatInt(userId, 10), CacheTimeGenerator())
+	redis.Client.Expire(redis.Ctx, "UserFriends:"+strconv.FormatInt(userId, 10), CacheTimeGenerator())
 }
 
 /*

@@ -11,8 +11,8 @@ const (
 	VIDEO_NUM_PER_REFRESH     = 6
 	VIDEO_INIT_NUM_PER_AUTHOR = 10
 	// 阿里 OSS 相关配置
-	OSS_ACCESS_KEY_ID     = "LTAI5t7Yy1jQVLAvVAHF2KqZ"
-	OSS_ACCESS_KEY_SECRET = "6MjwdHPszGfOnBJBJklXzjqTcEQRlO"
+	OSS_ACCESS_KEY_ID     = ""
+	OSS_ACCESS_KEY_SECRET = ""
 	OSS_BUCKET_NAME       = "durlim-tiktok"
 	OSS_ENDPOINT          = "oss-cn-beijing.aliyuncs.com"
 	CUSTOM_DOMAIN         = "durlim-tiktok.oss-cn-beijing.aliyuncs.com"
